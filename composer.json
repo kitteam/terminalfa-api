@@ -1,0 +1,43 @@
+{
+    "name": "kitteam/terminalfa-api",
+    "description": "TerminalFA API client for Laravel",
+    "keywords": [
+        "framework",
+        "laravel",
+        "terminalFA",
+        "54FZ",
+        "api"
+    ],
+    "type": "library",
+    "require": {
+        "laravel/framework": "^5.0"
+    },
+    "license": "GPL-3.0",
+    "support": {
+        "issues": "https://github.com/kitteam/terminalfa-api/issues",
+        "source": "https://github.com/kitteam/terminalfa-api"
+    },
+    "authors": [
+        {
+            "name": "Anton Popov",
+            "email": "a.popov@kit.team"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "TerminalFaApi\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "TerminalFaApi\\Providers\\TerminalFaServiceProvider"
+            ],
+            "aliases": {
+                "TerminalFa": "TerminalFaApi\\Facades\\TerminalFa"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
