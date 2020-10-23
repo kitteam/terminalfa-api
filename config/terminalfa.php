@@ -16,9 +16,10 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'accounts' => [
+    'locations' => [
         'default' => [
-            'ip' => env('TERMINALFA_IP'),
+            'host' => env('TERMINALFA_HOST', '192.168.0.1'),
+            'port' => env('TERMINALFA_PORT', 7777)
         ],
     ],
 
