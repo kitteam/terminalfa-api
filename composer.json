@@ -10,6 +10,7 @@
     ],
     "type": "library",
     "require": {
+        "clue/socket-raw": "^1.4.1",
         "laravel/framework": "^5.0|^6.0|^7.0"
     },
     "license": "GPL-3.0",

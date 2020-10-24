@@ -2,6 +2,7 @@
 
 namespace TerminalFaApi\Services;
 
+use Socket\Raw\Factory;
 use TerminalFaApi\Exceptions\TerminalFaExceptions;
 
 class TerminalFaApi
@@ -15,6 +16,11 @@ class TerminalFaApi
      * @var string
      */
     private $port = '';
+
+    public function __construct()
+    {
+        $this->location('default');
+    }
 
     public function location($location = '')
     {
@@ -31,15 +37,15 @@ class TerminalFaApi
             throw new \Exception('Specified location config does not contain host or port');
         }
 
-        $this->host = (string) $locations[$location]['host'];
-        $this->port = (string) $locations[$location]['port'];
+        $this->host = (string)$locations[$location]['host'];
+        $this->port = (string)$locations[$location]['port'];
 
         return $this;
     }
 
     /**
      * @param string $address
-     * @param array  $config
+     * @param array $config
      *
      * @return bool
      */
@@ -51,13 +57,49 @@ class TerminalFaApi
 
     /**
      * @param string $cmd
-     *
-     * @throws Exceptions
+     * @param string $data
      *
      * @return string
+     * @throws Exceptions
+     *
      */
-    public function send($cmd)
+    public function send($cmd, $data = "")
     {
-        // ...
+        $length = dechex(strlen(hex2bin($cmd . implode(unpack("H*", $data)))));
+
+        $data = [
+            str_pad($length, 4, "0", STR_PAD_LEFT),
+            $cmd,
+            implode(unpack("H*", $data))
+        ];
+
+        $crc = $this->crc16ccitt(hex2bin(join('', $data)));
+        $crc = str_pad(dechex($crc), 4, "0", STR_PAD_LEFT);
+        $bytes = str_split($crc, 2);
+
+        array_unshift($data, "B629");
+        array_push($data, $bytes[1] . $bytes[0]);
+
+        $data = hex2bin(join("", $data));
+
+        $factory = new Factory();
+        $socket = $factory->createClient("{$this->host}:{$this->port}");
+        $socket->write($data);
+
+        $data = $socket->read(8192);
+        $socket->close();
+
+        return $data;
+    }
+
+    protected function crc16ccitt($data)
+    {
+        $crc = 0xFFFF;
+        for ($i = 0; $i < strlen($data); $i++) {
+            $x = (($crc >> 8) ^ ord($data[$i])) & 0xFF;
+            $x ^= $x >> 4;
+            $crc = (($crc << 8) ^ ($x << 12) ^ ($x << 5) ^ $x) & 0xFFFF;
+        }
+        return $crc;
     }
 }
