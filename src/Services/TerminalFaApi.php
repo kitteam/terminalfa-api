@@ -86,8 +86,20 @@ class TerminalFaApi
         $socket = $factory->createClient("{$this->host}:{$this->port}");
         $socket->write($data);
 
+        usleep(100000); // Нужна пауза между отправкой и чтением данных
+
         $data = $socket->read(8192);
+
+        $length = hexdec(bin2hex(substr($data, 2, 2)));
+        $result = hexdec(bin2hex(substr($data, 4, 1)));
+        $crc = bin2hex(substr($data, -2));
+        $data = substr($data, 5, $length - 1);
+
         $socket->close();
+
+        if ($result) {
+            throw new \Exception($data);
+        }
 
         return $data;
     }
