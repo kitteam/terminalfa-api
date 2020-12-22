@@ -11,7 +11,7 @@ class TerminalFaExceptions extends Exception
      *
      * @return $this
      */
-    public static function render(Exception $e)
+    /*public static function render(Exception $e)
     {
         switch ($e->message) {
             default:
@@ -19,5 +19,5 @@ class TerminalFaExceptions extends Exception
         }
 
         return $return;
-    }
+    }*/
 }

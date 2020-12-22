@@ -3,10 +3,13 @@
 namespace TerminalFaApi\Services;
 
 use Socket\Raw\Factory;
+use DateTime;
 use TerminalFaApi\Exceptions\TerminalFaExceptions;
 
 class TerminalFaApi
 {
+    use Status;
+
     /**
      * @var
      */
@@ -60,10 +63,10 @@ class TerminalFaApi
      * @param string $data
      *
      * @return string
-     * @throws Exceptions
+     * @throws TerminalFaExceptions
      *
      */
-    public function send($cmd, $data = "")
+    public function send($cmd, $data = "", $structure = [])
     {
         $length = dechex(strlen(hex2bin($cmd . implode(unpack("H*", $data)))));
 
@@ -86,22 +89,41 @@ class TerminalFaApi
         $socket = $factory->createClient("{$this->host}:{$this->port}");
         $socket->write($data);
 
-        usleep(100000); // Нужна пауза между отправкой и чтением данных
-
-        $data = $socket->read(8192);
-
-        $length = hexdec(bin2hex(substr($data, 2, 2)));
-        $result = hexdec(bin2hex(substr($data, 4, 1)));
-        $crc = bin2hex(substr($data, -2));
-        $data = substr($data, 5, $length - 1);
+        $response = null;
+        while ($data = $socket->read(2048)) {
+            $response .= $data;
+        }
 
         $socket->close();
 
-        if ($result) {
-            throw new \Exception($data);
+        if ('b629' !== ($start = bin2hex(mb_strcut($response, 0, 2)))) {
+            throw new TerminalFaExceptions('No correct response');
+        }
+        if ($result = hexdec(bin2hex(mb_strcut($response, 4, 1)))) {
+            throw new TerminalFaExceptions('An error occurred', $result);
         }
 
-        return $data;
+        $crc = bin2hex(mb_strcut($response, -2));
+        $length = hexdec(bin2hex(mb_strcut($response, 2, 2)));
+        $response = mb_strcut($response, 5, $length - 1);
+
+        if ($structure) {
+            $data = [];
+
+            foreach ($structure as $key => $type)
+            {
+                if (preg_match('/(?P<type>[a-z]*)\((?P<length>\d*)\)/mi', $type, $matches)) {
+                    $data[$key] = $this->{$matches['type']}(mb_strcut($response, 0, $matches['length']));
+                    $response = mb_strcut($response, $matches['length']);
+                } elseif (preg_match('/(?P<type>[a-z]*)/mi', $type, $matches)) {
+                    $data[$key] = $this->{$matches['type']}($response);
+                }
+            }
+
+            return $data;
+        }
+
+        return $response;
     }
 
     protected function crc16ccitt($data)
@@ -113,5 +135,29 @@ class TerminalFaApi
             $crc = (($crc << 8) ^ ($x << 12) ^ ($x << 5) ^ $x) & 0xFFFF;
         }
         return $crc;
+    }
+
+    protected function ascii($string)
+    {
+        return preg_replace('/[\x00-\x1F\x7F\xA0]/u', '', $string);
+    }
+
+    protected function datetime($binary)
+    {
+        $hex = current(unpack("H*", $binary));
+        foreach (str_split($hex,2) as $hex) {
+            $data[] = substr('0'. hexdec($hex), -2);
+        }
+
+        $format = substr('ymdHis', 0, strlen($binary));
+        $datetime = DateTime::createFromFormat($format, join('', $data));
+
+        return $datetime;
+    }
+
+    protected function byte($binary)
+    {
+        $hex = current(unpack("H*", $binary));
+        return hexdec($hex);
     }
 }
