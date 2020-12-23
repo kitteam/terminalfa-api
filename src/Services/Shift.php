@@ -45,7 +45,7 @@ trait Shift
      *
      * @return mixed
      */
-    public function sendCashierDetails($fullName, $inn = null)
+    public function sendCashierDetails($fullName, $inn = '            ')
     {
         $data = implode([
             $this->tlv(1021, $fullName),
@@ -53,5 +53,51 @@ trait Shift
         ]);
 
         return $this->send('2F', $data);
+    }
+
+    /**
+     * Открыть смену [0x22].
+     *
+     * @return mixed
+     */
+    public function openShift()
+    {
+        $structure = [
+            'shift_number' => 'BINDECREV(2)', // Номер открытой смены
+            'document_number' => 'BINDECREV(4)', // Номер ФД
+            'fiscal_feature' => 'BINDECREV(4)', // Фискальный признак
+        ];
+
+        return $this->send('22', false, $structure);
+    }
+
+    /**
+     * Начать закрытие смены [0x29].
+     *
+     * $withoutPrinting - Формировать отчет без вывода на печать
+     * true - не печатать чек
+     * false - напечатать чек
+     *
+     * @return mixed
+     */
+    public function startСlosingShift($withoutPrinting = true)
+    {
+        return $this->send('29', $this->dechex($withoutPrinting));
+    }
+
+    /**
+     * Закрыть смену [0x2A].
+     *
+     * @return mixed
+     */
+    public function closeShift()
+    {
+        $structure = [
+            'shift_number' => 'BINDECREV(2)', // Номер закрытой смены
+            'document_number' => 'BINDECREV(4)', // Номер ФД
+            'fiscal_feature' => 'BINDECREV(4)', // Фискальный признак
+        ];
+
+        return $this->send('2A', false, $structure);
     }
 }
