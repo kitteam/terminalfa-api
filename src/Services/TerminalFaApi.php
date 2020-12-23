@@ -69,21 +69,20 @@ class TerminalFaApi
     public function send($cmd, $data = "", $structure = [])
     {
         //$length = dechex(strlen(hex2bin($cmd . implode(unpack("H*", $data)))));
-        $length = dechex(strlen(hex2bin($cmd .  $data)));
+        $length = $this->dechex(strlen(hex2bin($cmd .  $data)), 4);
 
         $data = [
-            str_pad($length, 4, "0", STR_PAD_LEFT),
+            $length,
             $cmd,
             //implode(unpack("H*", $data))
             $data
         ];
 
-        $crc = $this->crc16ccitt(hex2bin(join('', $data)));
-        $crc = str_pad(dechex($crc), 4, "0", STR_PAD_LEFT);
-        $bytes = str_split($crc, 2);
+        $crc = $this->crc16ccitt(hex2bin(implode($data)));
+        $crc = $this->reverse($this->dechex($crc, 4), 2);
 
         array_unshift($data, "B629");
-        array_push($data, $bytes[1] . $bytes[0]);
+        array_push($data, $crc);
 
         $data = hex2bin(implode($data));
 
@@ -159,14 +158,14 @@ class TerminalFaApi
     /*
      * Перевод числа из десятичной системы счисления в шестнадцатеричную с ведущим нулем
      */
-    protected function dechex($dec)
+    protected function dechex($dec, $length = false)
     {
         $hex = dechex($dec);
-        $length = strlen($hex);
 
-        if ($length & 1) {
-            $hex = str_pad($hex, $length + 1, "0", STR_PAD_LEFT);
-        }
+        $length = $length ?: strlen($hex);
+        $length = $length & 1 ? $length + 1 : $length;
+
+        $hex = str_pad($hex, $length, "0", STR_PAD_LEFT);
 
         return $hex;
     }
