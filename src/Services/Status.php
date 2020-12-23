@@ -209,23 +209,12 @@ trait Status
     public function ethernetInterface()
     {
         $structure = [
-            'ip' => 'UINT(4)', // IP адрес
-            'mask' => 'UINT(4)', // Маска подсети
-            'gateway' => 'UINT(4)', // Шлюз по умолчанию
+            'ip' => 'IP(4)', // IP адрес
+            'mask' => 'IP(4)', // Маска подсети
+            'gateway' => 'IP(4)', // Шлюз по умолчанию
         ];
 
-        $data = $this->send('0E', false, $structure);
-
-        foreach ($data as $key => $value) {
-            $data[$key] = [];
-            $parts = str_split(dechex($value), 2);
-            foreach ($parts as $hex) {
-                $data[$key][] = hexdec($hex);
-            }
-            $data[$key] = join('.', $data[$key]);
-        }
-
-        return $data;
+        return $this->send('0E', false, $structure);
     }
 
     /**
