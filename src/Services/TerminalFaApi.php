@@ -140,19 +140,80 @@ class TerminalFaApi
     }
 
     /*
-     * Преобразование строки в кодировку CP866
-     */
-    protected function cp866($string)
-    {
-        return mb_convert_encoding($string, "CP866");
-    }
-
-    /*
      * Преобразование бинарных данных в шестнадцатеричную систему
      */
     protected function binhex($binary)
     {
         return current(unpack("H*", $binary));
+    }
+
+    /*
+     * Преобразование бинарных данных в шестнадцатеричную систему в обратном порядке
+     */
+    protected function binhexrev($binary)
+    {
+        return $this->reverse($this->binhex($binary));
+    }
+
+    /*
+     * Преобразование бинарных данных в десятиричную систему
+     */
+    protected function bindec($binary)
+    {
+        return hexdec($this->binhex($binary));
+    }
+
+    /*
+     * Преобразование бинарных данных в десятиричную систему в обратном порядке
+     */
+    protected function bindecrev($binary)
+    {
+        return hexdec($this->binhexrev($binary));
+    }
+
+    /*
+     * Преобразование бинарных данных в дату
+     */
+    protected function bindate($binary)
+    {
+        foreach (str_split($this->binhex($binary),2) as $hex) {
+            $data[] = substr('0'. hexdec($hex), -2);
+        }
+
+        $format = substr('ymdHis', 0, strlen($binary));
+        $date = DateTime::createFromFormat($format, implode($data));
+
+        return $date;
+    }
+
+    /*
+     * Преобразование бинарных данных в текст
+     */
+    protected function bintext($binary)
+    {
+        return preg_replace('/[\x00-\x1F\x7F\xA0]/u', '', $binary);
+    }
+
+    /*
+     * Преобразование бинарных данных в IP адрес
+     */
+    protected function binip($binary)
+    {
+        $parts = str_split($this->binhex($binary), 2);
+
+        foreach ($parts as $key => $hex) {
+            $parts[$key] = hexdec($hex);
+        }
+
+        return join('.', $parts);
+    }
+
+    /*
+     * Преобразование строки в кодировку CP866
+     */
+    protected function cp866($string)
+    {
+        return mb_convert_encoding($string, "CP866");
     }
 
     /*
@@ -196,50 +257,14 @@ class TerminalFaApi
         ]);
     }
 
-    // Deprecated
-    protected function int($binary)
-    {
-        return hexdec($this->binhex($binary));
-    }
-
+    /*// Deprecated
     protected function intle($binary)
     {
         $hex = join('', array_reverse(str_split($this->binhex($binary), 2)));
         return hexdec($hex);
     }
 
-    protected function ascii($string)
-    {
-        return preg_replace('/[\x00-\x1F\x7F\xA0]/u', '', $string);
-    }
 
-    protected function datetime($binary)
-    {
-        foreach (str_split($this->binhex($binary),2) as $hex) {
-            $data[] = substr('0'. hexdec($hex), -2);
-        }
-
-        $format = substr('ymdHis', 0, strlen($binary));
-        $datetime = DateTime::createFromFormat($format, join('', $data));
-
-        return $datetime;
-    }
-
-    protected function ip($binary)
-    {
-        $parts = str_split($this->binhex($binary), 2);
-
-        foreach ($parts as $key => $hex) {
-            $parts[$key] = hexdec($hex);
-        }
-
-        return join('.', $parts);
-    }
-
-    protected function tag($tag, $data)
-    {
-        $tag = $this->dechex($tag, 4);
-    }
 
     // Deprecated
     protected function byte($binary)
@@ -261,5 +286,5 @@ class TerminalFaApi
         $hex = current(unpack("H*", $binary));
         $hex = join('', array_reverse(str_split($hex, 2)));
         return hexdec($hex);
-    }
+    }*/
 }

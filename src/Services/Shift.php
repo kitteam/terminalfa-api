@@ -12,11 +12,11 @@ trait Shift
     public function parametersСurrentShift()
     {
         $structure = [
-            'shift_status' => 'INT(1)', // Состояние смены
+            'shift_status' => 'BINDEC(1)', // Состояние смены
             // 0 – смена закрыта, 1 – смена открыта
-            'shift_number' => 'INTLE(2)', // Номер смены
+            'shift_number' => 'BINDECREV(2)', // Номер смены
             // Если смена закрыта, то – номер последней закрытой смены, если открыта, то номер текущей смены
-            'check_number' => 'INTLE(2)', // Номер чека
+            'check_number' => 'BINDECREV(2)', // Номер чека
             // Если смена закрыта, то число документов в предыдущей закрытой смене (0, если это первая смена). Если смена открыта, но нет ни одного чека, то 0. В остальных случаях – номер последнего сформированного чека
         ];
 
@@ -34,9 +34,7 @@ trait Shift
      */
     public function startOpeningShift($withoutPrinting = true)
     {
-        $hex = $this->dechex($withoutPrinting);
-
-        return $this->send('21', $hex);
+        return $this->send('21', $this->dechex($withoutPrinting));
     }
 
     /**
