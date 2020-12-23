@@ -113,8 +113,8 @@ class TerminalFaApi
             foreach ($structure as $key => $type)
             {
                 if (preg_match('/(?P<type>[a-z]*)\((?P<length>\d*)\)/mi', $type, $matches)) {
-                    $data[$key] = $this->{$matches['type']}(mb_strcut($response, 0, $matches['length']));
-                    $response = mb_strcut($response, $matches['length']);
+                    $data[$key] = $this->{$matches['type']}(substr($response, 0, $matches['length']));
+                    $response = substr($response, $matches['length']);
                 } elseif (preg_match('/(?P<type>[a-z]*)/mi', $type, $matches)) {
                     $data[$key] = $this->{$matches['type']}($response);
                 }
@@ -158,6 +158,19 @@ class TerminalFaApi
     protected function byte($binary)
     {
         $hex = current(unpack("H*", $binary));
+        return hexdec($hex);
+    }
+
+    protected function uint($binary)
+    {
+        $hex = current(unpack("H*", $binary));
+        return hexdec($hex);
+    }
+
+    protected function uintle($binary)
+    {
+        $hex = current(unpack("H*", $binary));
+        $hex = join('', array_reverse(str_split($hex, 2)));
         return hexdec($hex);
     }
 }
